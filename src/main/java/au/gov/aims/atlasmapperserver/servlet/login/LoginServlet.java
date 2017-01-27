@@ -25,6 +25,7 @@ import au.gov.aims.atlasmapperserver.ConfigHelper;
 import au.gov.aims.atlasmapperserver.User;
 import au.gov.aims.atlasmapperserver.Utils;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -77,6 +78,7 @@ public class LoginServlet extends HttpServlet {
 		} else if ("login".equalsIgnoreCase(actionStr)) {
 			String loginUsername = request.getParameter("loginUsername");
 			String loginPassword = request.getParameter("loginPassword");
+
 			if (loginUsername != null && loginUsername.length() > 0 && loginPassword != null && loginPassword.length() > 0 ) {
 				User user = this.login(session, loginUsername, loginPassword, request.getRemoteAddr());
 				if (user != null) {
@@ -93,7 +95,16 @@ public class LoginServlet extends HttpServlet {
 			response.setContentType("application/json");
 			response.setStatus(HttpServletResponse.SC_OK);
 			this.setResponseContent(response, result.toString());
-		} else {
+		} else if ("get_session_id".equalsIgnoreCase(actionStr)){
+			//DES: Add get_session_id action, session_id may be best kept hidden, although it already gets sent to the client,
+			// perhaps generate a random token instead and maintain relationship to session_id within servlet instead
+			// Send the session ID for the client to salt their password hash with
+			result.put("success", new JSONObject().put("sessionid", session.getId().toString()));
+			response.setContentType("application/json");
+			response.setStatus(HttpServletResponse.SC_OK);
+			this.setResponseContent(response, result.toString());
+
+		}else {
 			// Unknown action. Redirect to the home page.
 			response.sendRedirect(REDIRECT_PAGE);
 		}
@@ -142,7 +153,10 @@ public class LoginServlet extends HttpServlet {
 			return null;
 		}
 
-		boolean isValid = user.verifyPassword(password);
+		//boolean isValid = user.verifyPassword(password);
+		//DES:
+		boolean isValid = user.verifyPassword(session.getId().toUpperCase(),password);
+
 
 		if (isValid) {
 			// TODO Initiate the user session
