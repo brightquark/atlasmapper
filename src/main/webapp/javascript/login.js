@@ -28,7 +28,11 @@ Password: [    ]
 Ext.onReady(function() {
 	Ext.QuickTips.init();
 
+    var session_id='0';
+
 	var submit = function() {
+
+
 		var form = login.getForm();
 		if (form.isValid()) {
 			login.getForm().submit({
@@ -78,9 +82,43 @@ Ext.onReady(function() {
 		}
 	};
 
+	var Authenticate = function(passwordField) {
+        //DES: Encode Password field for submission
+        var session_id;
+
+        //DES: Query the server via Ajax for current session ID to use as a SALT (Means the return token is unique to each session
+		// session_id may not be best SALT and may be substituted later for some other random number )
+        Ext.Ajax.request({
+            url: "login.jsp?action=get_session_id",
+            method: 'GET',
+            success: function (response) {
+            	var sess = Ext.JSON.decode(response.responseText);
+                session_id = sess.success['sessionid'];
+                //Get the result of SHA-1 hashing the supplied password added to the session id and hashed again
+                var salt=session_id.toString().toUpperCase();
+                var SHA1pass=Sha1.hash(Sha1.hash(passwordField.getValue()).toUpperCase()+salt).toUpperCase();
+                if(SHA1pass!=null) {
+                    //DES: Use the password field to send the Token
+                    passwordField.setValue(SHA1pass);
+                    submit();
+                } else {
+                    Ext.Msg.alert('Unknown Session ID', 'Unable to obtain Session');
+                    return;
+                }
+            } ,
+            failure : function(){
+                return(null);
+            }
+        });
+
+	}
+
+
 	var submitEnterKey = function(field, e) {
 		if (e.getKey() == e.ENTER) {
-			submit();
+            var passwordField=this.up().getComponent(1);
+			Authenticate(passwordField);
+
 		}
 	};
 
@@ -89,6 +127,7 @@ Ext.onReady(function() {
 	// NOTE: login.jsp is a virtual file, pointing to the servlet:
 	//    au.gov.aims.atlasmapperserver.servlet.login.LoginServlet
 	var login = Ext.create('Ext.form.Panel', {
+		id: 'loginPanel',
 		labelWidth: 80,
 		url: 'login.jsp?action=login',
 		frame: true,
@@ -106,6 +145,7 @@ Ext.onReady(function() {
 			}, {
 				fieldLabel: 'Password',
 				name: 'loginPassword',
+				itemId:'passwordField',
 				inputType: 'password',
 				allowBlank: false,
 				// submit using Enter key
@@ -150,7 +190,11 @@ Ext.onReady(function() {
 					formBind: true, // only enabled once the form is valid
 					disabled: true,
 					// Function that fires when user clicks the button
-					handler: submit
+					handler: function() {
+						//DES: get the value of the passwordField and Authenticate
+						var passwordField=Ext.getCmp("loginPanel").getForm().findField("loginPassword")
+						Authenticate(passwordField);
+                    }
 				}
 			]
 		}]
