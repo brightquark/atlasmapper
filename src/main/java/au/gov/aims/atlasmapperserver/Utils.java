@@ -471,7 +471,9 @@ public class Utils {
 	 */
 	public static String encrypt(String pass) {
 		try {
-			byte[] encryptPass = md5sum(pass);
+			//DES - Use SHA-1 Hashing instead of MD5
+			//byte[] encryptPass = md5sum(pass);
+			byte[] encryptPass = sha1(pass);
 			return toHex(encryptPass);
 		} catch (NoSuchAlgorithmException ex) {
 			LOGGER.log(Level.SEVERE, "Can not encrypt the password: {0}", Utils.getExceptionMessage(ex));
@@ -483,12 +485,50 @@ public class Utils {
 
 	public static byte[] md5sum(String data) throws NoSuchAlgorithmException {
 		return MessageDigest.getInstance("MD5").digest(data.getBytes());
+
 	}
+
+	public static byte[] sha1(String data) throws NoSuchAlgorithmException {
+		//DES: SHA1 Hashing if only because it was thought more secure than MD5, SHA-256 is more secure
+		// probably not a big deal in this use case. Message digest negotiation may be required if used
+		// internationally as some cryptographic functions may not be available.
+		byte[] out;
+		out=MessageDigest.getInstance("SHA-1").digest(data.getBytes());
+		return(out);
+	}
+
+	/**
+	 * Produce a hash of the password hashed with
+	 * @param salt
+	 * @param password
+	 * @return
+	 */
+
+	public static String saltPassword(String salt, String password) {
+		String sPwd;
+		try {
+			sPwd=toHex(sha1(password + salt));
+		} catch (NoSuchAlgorithmException ex) {
+			LOGGER.log(Level.SEVERE, "Can not SALT the password: {0} Message Digest algorithm SHA1 not present", Utils.getExceptionMessage(ex));
+			LOGGER.log(Level.FINE, "Stack trace:", ex);
+			return null;
+		}
+		return(sPwd);
+	}
+
+
 
 	public static String toHex(byte[] bytes) {
 		StringBuilder sb = new StringBuilder();
 		for (byte abyte : bytes) {
 			sb.append(String.format("%02X", abyte));
+		}
+		return sb.toString();
+	}
+	public static String toHex(String str) {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0;i<str.length();i++) {
+			sb.append(String.format("%02X", str.charAt(i)));
 		}
 		return sb.toString();
 	}

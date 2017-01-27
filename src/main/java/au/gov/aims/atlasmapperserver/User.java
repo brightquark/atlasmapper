@@ -23,10 +23,15 @@ package au.gov.aims.atlasmapperserver;
 
 import au.gov.aims.atlasmapperserver.annotation.ConfigField;
 import java.io.FileNotFoundException;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import static au.gov.aims.atlasmapperserver.Utils.saltPassword;
+import static au.gov.aims.atlasmapperserver.Utils.sha1;
+import static au.gov.aims.atlasmapperserver.Utils.toHex;
 
 /**
  *
@@ -138,7 +143,20 @@ public class User extends AbstractConfig {
 			LOGGER.log(Level.FINE, "Stack trace:", ex);
 			return false;
 		}
-		return this.encryptedPassword.equals(
-				Utils.encrypt(passwordAttempt));
+
+		return this.encryptedPassword.
+				equals(passwordAttempt.toUpperCase());
 	}
+
+	//DES - Compare Password attempt with local hashed Password + session ID hashed again
+	public boolean verifyPassword(String salt, String passwordToken) {
+		try {
+			return (saltPassword(salt, this.encryptedPassword).equals(passwordToken));
+		} catch (NullPointerException e) {
+			return false;
+		}
+	}
+
+
+
 }
