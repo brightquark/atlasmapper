@@ -35,6 +35,8 @@
 		<link rel="icon" type="image/png" href="../resources/favicon.png" />
 		<!--<script type="text/javascript" src="../extjs/4.0.2/ext-4.0.2/ext-all.js"></script>-->
 		<script type="text/javascript" src="../extjs/4.0.2/ext-4.0.2/ext-all-debug.js"></script>
+		//DES: Add Sha1.js to generate message digest
+		<script type="text/javascript" src="../javascript/sha1.js"></script>
 		<link rel="stylesheet" type="text/css" href="../extjs/4.0.2/ext-4.0.2/resources/css/ext-all.css" />
 
 		<%
